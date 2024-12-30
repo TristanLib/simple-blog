@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}{{ post.title }}{% endblock %}
+
+{% block content %}
+<article class="max-w-4xl mx-auto">
+    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        <div class="p-8">
+            <h1 class="text-3xl font-bold mb-4">{{ post.title }}</h1>
+            <div class="flex items-center text-gray-500 text-sm mb-8">
+                <span>{{ post.author.username }}</span>
+                <span class="mx-2">•</span>
+                <span>{{ post.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                <span class="ml-2 px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full">
+                    付费文章 - ¥{{ "%.2f"|format(post.price) }}
+                </span>
+            </div>
+            
+            <div class="prose max-w-none">
+                {# 显示文章预览，例如前300个字符 #}
+                <p>{{ post.content[:300] }}...</p>
+                
+                <div class="mt-8 p-6 bg-gray-50 rounded-lg">
+                    <h3 class="text-lg font-semibold mb-4">这是一篇付费文章</h3>
+                    <p class="text-gray-600 mb-6">
+                        支付 ¥{{ "%.2f"|format(post.price) }} 后即可阅读全文
+                    </p>
+                    {% if current_user.is_authenticated %}
+                        <form action="{{ url_for('main.create_purchase', post_id=post.id) }}" method="POST">
+                            <button type="submit" 
+                                    class="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600 transition duration-300">
+                                立即购买
+                            </button>
+                        </form>
+                    {% else %}
+                        <a href="{{ url_for('auth.login', next=request.path) }}" 
+                           class="inline-block bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600 transition duration-300">
+                            登录后购买
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</article>
+{% endblock %}

@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}首页{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    {% if current_user.is_authenticated %}
+    <div class="mb-8 bg-gradient-to-r from-blue-500 to-teal-400 rounded-lg shadow-lg p-8 text-white">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <img src="https://www.gravatar.com/avatar/{{ current_user.email|lower|trim|hash('md5') }}?s=80&d=identicon" 
+                     class="w-16 h-16 rounded-full border-4 border-white shadow-inner" alt="avatar">
+                <div>
+                    <h2 class="text-2xl font-bold">欢迎回来，{{ current_user.username }}！</h2>
+                    <p class="text-blue-100">开始分享你的故事吧</p>
+                </div>
+            </div>
+            <a href="{{ url_for('main.create_post') }}" 
+               class="bg-white text-blue-600 hover:bg-blue-50 font-semibold py-3 px-6 rounded-full transition duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white">
+                <i class="fas fa-pen-fancy mr-2"></i>写文章
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {% for post in posts.items %}
+        <article class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition duration-300">
+            <div class="relative pb-48 overflow-hidden">
+                <img class="absolute inset-0 h-full w-full object-cover transform hover:scale-105 transition duration-700 ease-out" 
+                     src="https://picsum.photos/seed/{{ post.id }}/800/600" alt="Article thumbnail">
+                {% if post.is_paid %}
+                <span class="absolute top-4 right-4 bg-yellow-400 text-yellow-900 text-sm font-bold px-3 py-1 rounded-full shadow">
+                    <i class="fas fa-crown mr-1"></i>付费
+                </span>
+                {% endif %}
+            </div>
+            
+            <div class="p-6">
+                <div class="flex items-center mb-4">
+                    <img class="h-10 w-10 rounded-full mr-4" 
+                         src="https://www.gravatar.com/avatar/{{ post.author.email|lower|trim|hash('md5') }}?s=40&d=identicon" 
+                         alt="{{ post.author.username }}">
+                    <div>
+                        <p class="text-sm font-semibold text-gray-900">{{ post.author.username }}</p>
+                        <p class="text-xs text-gray-600">{{ post.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                    </div>
+                </div>
+                
+                <h2 class="text-xl font-bold text-gray-900 mb-4 hover:text-blue-600 transition duration-200">
+                    <a href="{{ url_for('main.post', post_id=post.id) }}">{{ post.title }}</a>
+                </h2>
+                
+                <p class="text-gray-600 mb-4 line-clamp-3">
+                    {{ post.content[:200] + '...' if post.content|length > 200 else post.content }}
+                </p>
+                
+                <div class="flex items-center justify-between">
+                    <div class="flex space-x-4">
+                        <span class="flex items-center text-gray-500 text-sm">
+                            <i class="far fa-eye mr-1"></i>
+                            {{ post.views|default(0) }}
+                        </span>
+                        <span class="flex items-center text-gray-500 text-sm">
+                            <i class="far fa-comment mr-1"></i>
+                            {{ post.comments|default([])|length }}
+                        </span>
+                    </div>
+                    {% if post.is_paid %}
+                    <span class="text-yellow-600 font-semibold">
+                        <i class="fas fa-yen-sign mr-1"></i>{{ "%.2f"|format(post.price) }}
+                    </span>
+                    {% endif %}
+                </div>
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+
+    {% if posts.pages > 1 %}
+    <div class="mt-8 flex justify-center">
+        <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+            {% if posts.has_prev %}
+            <a href="{{ url_for('main.index', page=posts.prev_num) }}" 
+               class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                <span class="sr-only">上一页</span>
+                <i class="fas fa-chevron-left"></i>
+            </a>
+            {% endif %}
+            
+            {% for page_num in range(1, posts.pages + 1) %}
+                {% if page_num == posts.page %}
+                <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-blue-50 text-sm font-medium text-blue-600">
+                    {{ page_num }}
+                </span>
+                {% else %}
+                <a href="{{ url_for('main.index', page=page_num) }}" 
+                   class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                    {{ page_num }}
+                </a>
+                {% endif %}
+            {% endfor %}
+            
+            {% if posts.has_next %}
+            <a href="{{ url_for('main.index', page=posts.next_num) }}" 
+               class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                <span class="sr-only">下一页</span>
+                <i class="fas fa-chevron-right"></i>
+            </a>
+            {% endif %}
+        </nav>
+    </div>
+    {% endif %}
+
+    {% if not posts.items %}
+    <div class="text-center py-12">
+        <div class="text-gray-400 mb-4">
+            <i class="fas fa-feather-alt text-6xl"></i>
+        </div>
+        <h3 class="text-xl font-medium text-gray-900 mb-2">还没有任何文章</h3>
+        <p class="text-gray-600">
+            {% if current_user.is_authenticated %}
+            快来分享第一篇文章吧！
+            {% else %}
+            登录后开始分享你的故事
+            {% endif %}
+        </p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
